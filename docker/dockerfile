@@ -1,0 +1,14 @@
+FROM login-api-base
+
+COPY docker/entrypoint.sh /
+COPY docker/supervisor/rest.conf /etc/supervisor/conf.d
+
+COPY scripts /scripts
+COPY src /src
+
+
+WORKDIR /src
+
+EXPOSE 10002
+
+ENTRYPOINT ["/entrypoint.sh"]
