@@ -26,27 +26,16 @@ setup(name='login-api',
             'Programming Language :: Python :: 3.5'
           ],
           packages=find_packages(exclude=['contrib', 'docs', 'test*']),
-          install_requires=['psycopg2-binary',
-                            'dateutils>=0.6.6',
-                            'requests',
-                            'redis==2.10.6',
-                            'SQLAlchemy',
-                            'httplib2',
-                            'pyjwt',
+          install_requires=['requests',
+                            'dateutils',
                             'Flask',
-                            'flask_jsontools',
-                            'jinja2',
-                            'xmltodict',
-                            'pytz',
+                            'flask-cors',
                             'gunicorn',
                             'microservices_common>=2.0.8a1',
                             'warden-api',
-                            'ptvsd',
-                            'google-api-python-client',
-                            'oauth2client'],
+                            'ptvsd'],
           entry_points={
             'console_scripts': [
-                'rest=login.api.rest.main:main'
             ]
           }
       )
