@@ -22,3 +22,13 @@ def login():
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)})
 
+
+@bp.route('/device/<did>', methods=['GET'])
+def get_device_id(did:str):
+    try:
+        logging.info(did)
+        return jsonify({'status': 200, 'response': 'cvxv'})
+
+    except Exception as e:
+        return jsonify({'status': 500, 'response':str(e)})
+
