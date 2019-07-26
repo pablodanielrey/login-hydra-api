@@ -3,11 +3,8 @@ import contextlib
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from model_utils import Base
-from .entities import *
-
 @contextlib.contextmanager
-def obtener_session(echo=True):
+def open_session(echo=True):
     engine = create_engine('postgresql://{}:{}@{}:{}/{}'.format(
         os.environ['DB_USER'],
         os.environ['DB_PASSWORD'],
@@ -24,11 +21,3 @@ def obtener_session(echo=True):
         session.close()
         engine.dispose()
 
-
-from .LoginModel import LoginModel
-from .RecuperarClaveModel import RecuperarClaveModel
-
-__all__ = [
-    'LoginModel',
-    'RecuperarClaveModel'
-]
