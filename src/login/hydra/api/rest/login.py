@@ -63,6 +63,40 @@ def get_challenge(challenge:str):
         return jsonify({'status': 500, 'response':str(e)})
 
 
+@bp.route('/consent/<challenge>', methods=['GET'])
+def get_consent_challenge(challenge:str):
+    try:
+        assert challenge is not None
+
+        status, data = hydraModel.get_consent_challenge(challenge)
+        if status != 200:
+            raise Exception(data)
+
+
+        scopes = data['requested_scope']
+        status, redirect = hydraModel.accept_consent_challenge(challenge, scopes, remember=False)
+        if status != 200:
+            raise Exception(data)
+
+        response = {
+            'skip': data['skip'],
+            'scopes': data['requested_scope'],
+            'audience': data['requested_access_token_audience'],
+            'subject': data['subject'],
+            'redirect_to': redirect['redirect_to']
+        }
+
+        return jsonify({'status': 200, 'response': response})
+
+    except Exception as e:
+        return jsonify({'status': 500, 'response':str(e)})
+
+
+
+
+
+
+
 @bp.route('/challenges', methods=['GET'])
 def get_all_challenges():
     try:
