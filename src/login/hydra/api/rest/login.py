@@ -16,21 +16,25 @@ bp = Blueprint('users', __name__, url_prefix='/login/api/v1.0')
 def login():
     try:
         data = request.json
-        logging.info(data)
-        return jsonify({'status': 200, 'response': 'ok'})
 
-    except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)})
+        user = data['user']
+        assert user is not None
 
+        password = data['password']
+        assert password is not None
 
+        challenge = data['challenge']
+        assert challenge is not None
 
-@bp.route('/challenges', methods=['GET'])
-def get_all_challenges():
-    try:
-        import json
-        with open_session() as session:
-            challenges = logModel.get_log_challenges(session)
-        return jsonify({'status': 200, 'response': challenges})
+        status, data = hydraModel.accept_login_challenge(challenge, 'sadsadasd', remember=False)
+        if status != 200:
+            raise Exception(data)   
+
+        response = {
+            'redirect_to': data['redirect_to']
+        }
+
+        return jsonify({'status': 200, 'response': response})
 
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)})
@@ -57,6 +61,21 @@ def get_challenge(challenge:str):
 
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)})
+
+
+@bp.route('/challenges', methods=['GET'])
+def get_all_challenges():
+    try:
+        import json
+        with open_session() as session:
+            challenges = logModel.get_log_challenges(session)
+        return jsonify({'status': 200, 'response': challenges})
+
+    except Exception as e:
+        return jsonify({'status': 500, 'response':str(e)})
+
+
+
 
 
 @bp.route('/device/<did>', methods=['GET'])

@@ -26,5 +26,22 @@ class HydraModel:
             return (200, r.json())
         return (r.status_code, str(r))
 
+    def accept_login_challenge(self, challenge:str, uid:str, data={}, remember=True):
+        url = f"{self.hydra_api}/oauth2/auth/requests/login/accept"
+        h = {
+            'X-Forwarded-Proto':'https',
+            'Content-type': 'application/json',
+            'Accept': 'application/json'
+        }
+        data = {
+            'subject': uid,
+            'context': data,
+            'remember':remember,
+            'remember_for': 0 if not remember else 3600 * 24 * 365
+        }
+        r = requests.put(url, params={'login_challenge': challenge}, headers=h, json=data, verify=self.verify)
+        if r.status_code == 200:
+            return (200, r.json())
+        return (r.status_code, str(r))
 
 
