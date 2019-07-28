@@ -5,7 +5,7 @@ from dateutil.parser import parse
 import base64
 import io
 
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, jsonify, request, send_file
 
 from login.hydra.api.rest.models import hydraModel, logModel
 from login.hydra.model import open_session
@@ -27,6 +27,7 @@ def login():
 @bp.route('/challenges', methods=['GET'])
 def get_all_challenges():
     try:
+        import json
         with open_session() as session:
             challenges = logModel.get_log_challenges(session)
         return jsonify({'status': 200, 'response': challenges})
@@ -49,6 +50,7 @@ def get_challenge(challenge:str):
             session.commit()
 
         response = {
+            'challenge': challenge,
             'skip': data['skip']
         }
         return jsonify({'status': 200, 'response': response})

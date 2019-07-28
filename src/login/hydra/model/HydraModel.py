@@ -22,7 +22,7 @@ class HydraModel:
             'Accept': 'application/json'
         }
         r = requests.get(url, params={'login_challenge': challenge},headers=h, verify=self.verify)
-        if r.satus_code == 200:
+        if r.status_code == 200:
             return (200, r.json())
         return (r.status_code, str(r))
 
