@@ -7,7 +7,7 @@ import io
 
 from flask import Blueprint, jsonify, request, send_file
 
-from login.hydra.api.rest.models import hydraModel, logModel
+from login.hydra.api.rest.models import hydraModel, logModel, loginModel
 from login.hydra.model import open_session
 
 bp = Blueprint('users', __name__, url_prefix='/login/api/v1.0')
@@ -23,18 +23,45 @@ def login():
         password = data['password']
         assert password is not None
 
+        device_id = data['device_id']
+        assert device_id is not None
+
         challenge = data['challenge']
         assert challenge is not None
 
-        status, data = hydraModel.accept_login_challenge(challenge, 'sadsadasd', remember=False)
-        if status != 200:
-            raise Exception(data)   
+        usr = None
+        with open_session() as session:
+            usr = loginModel.login(session, user, password, device_id)
+            session.commit()
 
-        response = {
-            'redirect_to': data['redirect_to']
-        }
+        if not usr:
+            with open_session() as session:
+                d = hydraModel.get_device_logins(session, device_id)
+                if d.errors < 5:
+                    d.errors = d.errors + 1
+                    session.commit()
 
-        return jsonify({'status': 200, 'response': response})
+            if d.errors >= 5:
+                status, data = hydraModel.deny_login_challenge(challenge, user)
+                if status != 200:
+                    raise Exception(data)
+
+                response = {
+                    'redirect_to': data['redirect_to']
+                }
+
+            return jsonify({'status': 200, 'response': response})
+     
+        else:
+            status, data = hydraModel.accept_login_challenge(challenge, 'sadsadasd', remember=False)
+            if status != 200:
+                raise Exception(data)   
+
+            response = {
+                'redirect_to': data['redirect_to']
+            }
+
+            return jsonify({'status': 200, 'response': response})
 
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)})

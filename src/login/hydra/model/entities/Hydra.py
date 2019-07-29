@@ -11,6 +11,18 @@ def generateId():
     return str(uuid.uuid4())
 
 
+class DeviceLogins(Base):
+
+    __tablename__ = 'device_logins'
+
+    id = Column(String, primary_key=True, default=generateId)
+    created = Column(DateTime())
+
+    device_id = Column(String())
+    errors = Column(Integer(), default=0)
+    success = Column(Integer(), default=0)
+
+
 class ChallengeLog(Base):
 
     __tablename__ = 'challenge_log'

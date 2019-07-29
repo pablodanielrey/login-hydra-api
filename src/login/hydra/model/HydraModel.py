@@ -6,8 +6,11 @@
 """
 import logging
 import requests
+import datetime
 
 from oidc.oidc import ClientCredentialsGrant
+
+from .entities.Hydra import DeviceLogins
 
 class HydraModel:
 
@@ -75,3 +78,15 @@ class HydraModel:
         if r.status_code == 200:
             return (200, r.json())
         return (r.status_code, str(r))
+
+
+    def get_device_logins(self, session, device_id:str):
+        d = session.query(DeviceLogins).filter(DeviceLogins.device_id == device_id).one_or_none()
+        if not d:
+            d = DeviceLogins()
+            d.created = datetime.datetime.utcnow()
+            d.device_id = device_id
+            d.errors = 0
+            d.success = 0
+            session.add(d)
+        return d

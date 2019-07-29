@@ -33,6 +33,7 @@ setup(name='login-api',
                             'gunicorn',
                             'microservices_common>=2.0.8a1',
                             'warden-api',
+                            'login-model',
                             'ptvsd'],
           entry_points={
             'console_scripts': [
