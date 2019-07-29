@@ -28,3 +28,25 @@ class ChallengeLog(Base):
     skip = Column(Boolean())
 
     data = Column(String())
+
+
+class ConsentChallengeLog(Base):
+
+    __tablename__ = 'challenge_consent'
+
+    id = Column(String, primary_key=True, default=generateId)
+    created = Column(DateTime())
+
+    client_id = Column(String())
+    client_url = Column(String())
+    client_name = Column(String())
+
+    user_id = Column(String())
+    username = Column(String())
+    
+    skip = Column(Boolean())
+
+    login_session_id = Column(String())
+    login_challenge = Column(String())
+
+    data = Column(String())

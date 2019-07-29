@@ -51,7 +51,7 @@ def get_challenge(challenge:str):
 
         with open_session() as session:
             logModel.log_challenge(session, data)
-            session.commit()
+            session.commit() 
 
         response = {
             'challenge': challenge,
@@ -72,6 +72,9 @@ def get_consent_challenge(challenge:str):
         if status != 200:
             raise Exception(data)
 
+        with open_session() as session:
+            logModel.log_consent_challenge(session, data)
+            session.commit()
 
         scopes = data['requested_scope']
         status, redirect = hydraModel.accept_consent_challenge(challenge, scopes, remember=False)
@@ -108,6 +111,16 @@ def get_all_challenges():
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)})
 
+@bp.route('/consent_challenges', methods=['GET'])
+def get_all_consent_challenges():
+    try:
+        import json
+        with open_session() as session:
+            challenges = logModel.get_consent_challenges(session)
+        return jsonify({'status': 200, 'response': challenges})
+
+    except Exception as e:
+        return jsonify({'status': 500, 'response':str(e)})
 
 
 

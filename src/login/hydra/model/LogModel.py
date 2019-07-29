@@ -2,7 +2,7 @@
 import json
 import datetime
 
-from .entities.Hydra import ChallengeLog
+from .entities.Hydra import ChallengeLog, ConsentChallengeLog
 
 class LogModel:
 
@@ -18,6 +18,24 @@ class LogModel:
         c.data = json.dumps(challenge)
         session.add(c)
 
+    def log_consent_challenge(self, session, challenge):
+        c = ConsentChallengeLog()
+        c.created = datetime.datetime.utcnow()
+        c.client_id = challenge['client']['client_id']
+        c.client_name = challenge['client']['client_name']
+        c.client_url = challenge['client']['client_uri']
+        c.username = ''
+        c.user_id = challenge['subject']
+        c.skip = challenge['skip']
+        c.login_challenge = challenge['login_challenge']
+        c.login_session_id = challenge['login_session_id']
+        c.data = json.dumps(challenge)
+        session.add(c)
+
     def get_log_challenges(self, session):
         q = session.query(ChallengeLog).order_by(ChallengeLog.created.desc()).all()
+        return q
+
+    def get_consent_challenges(self, session):
+        q = session.query(ConsentChallengeLog).order_by(ConsentChallengeLog.created.desc()).all()
         return q
