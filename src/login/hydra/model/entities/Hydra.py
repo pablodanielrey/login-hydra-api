@@ -18,6 +18,8 @@ class ChallengeLog(Base):
     id = Column(String, primary_key=True, default=generateId)
     created = Column(DateTime())
 
+    challenge = Column(String())
+
     client_id = Column(String())
     client_url = Column(String())
     client_name = Column(String())
@@ -36,6 +38,8 @@ class ConsentChallengeLog(Base):
 
     id = Column(String, primary_key=True, default=generateId)
     created = Column(DateTime())
+
+    challenge = Column(String())
 
     client_id = Column(String())
     client_url = Column(String())

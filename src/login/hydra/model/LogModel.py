@@ -9,6 +9,7 @@ class LogModel:
     def log_challenge(self, session, challenge):
         c = ChallengeLog()
         c.created = datetime.datetime.utcnow()
+        c.challenge = challenge['challenge']
         c.client_id = challenge['client']['client_id']
         c.client_name = challenge['client']['client_name']
         c.client_url = challenge['client']['client_uri']
@@ -21,6 +22,7 @@ class LogModel:
     def log_consent_challenge(self, session, challenge):
         c = ConsentChallengeLog()
         c.created = datetime.datetime.utcnow()
+        c.challenge = challenge['challenge']
         c.client_id = challenge['client']['client_id']
         c.client_name = challenge['client']['client_name']
         c.client_url = challenge['client']['client_uri']
