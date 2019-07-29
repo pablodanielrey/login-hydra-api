@@ -40,10 +40,13 @@ def login():
         return jsonify({'status': 500, 'response':str(e)})
 
 
-@bp.route('/challenge/<challenge>', methods=['GET'])
+@bp.route('/challenge/<challenge>', methods=['POST'])
 def get_challenge(challenge:str):
     try:
         assert challenge is not None
+
+        data = request.json
+        assert data['device_id'] is not None
 
         status, data = hydraModel.get_login_challenge(challenge)
         if status != 200:
@@ -95,11 +98,6 @@ def get_consent_challenge(challenge:str):
         return jsonify({'status': 500, 'response':str(e)})
 
 
-
-
-
-
-
 @bp.route('/challenges', methods=['GET'])
 def get_all_challenges():
     try:
@@ -124,12 +122,16 @@ def get_all_consent_challenges():
 
 
 
-
-@bp.route('/device/<did>', methods=['GET'])
-def get_device_id(did:str):
+@bp.route('/device', methods=['POST'])
+def get_device_id():
     try:
-        logging.info(did)
-        return jsonify({'status': 200, 'response': 'cvxv'})
+        data = request.json
+        logging.info(data)
+
+        response = {
+            'device_id': 'dsfdsfdsfd'
+        }
+        return jsonify({'status': 200, 'response': response})
 
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)})
