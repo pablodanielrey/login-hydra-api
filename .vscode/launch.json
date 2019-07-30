@@ -10,7 +10,7 @@
             "request": "launch",
             "module": "flask",
             "env": {
-                "FLASK_APP": "login.hydra.api.rest.wsgi.py",
+                "FLASK_APP": "hydra.api.rest.wsgi.py",
                 "FLASK_ENV": "development",
                 "FLASK_DEBUG": "0"
             },

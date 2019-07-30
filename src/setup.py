@@ -11,10 +11,10 @@
 
 from setuptools import setup, find_packages
 
-setup(name='login-api',
+setup(name='hydra-api',
           version='0.2.4',
-          description='Proyecto que implementa la api de login',
-          url='https://github.com/pablodanielrey/login-api',
+          description='Proyecto que implementa la api de login de hydra',
+          url='https://github.com/pablodanielrey/login-hydra-api',
           author='Desarrollo DiTeSi, FCE',
           author_email='ditesi@econo.unlp.edu.ar',
           classifiers=[

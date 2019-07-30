@@ -5,10 +5,10 @@ from dateutil.parser import parse
 import base64
 import io
 
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request, send_file, make_response
 
-from login.hydra.api.rest.models import hydraModel, logModel, loginModel
-from login.hydra.model import open_session
+from hydra.api.rest.models import hydraModel, logModel, loginModel
+from hydra.model import open_session
 
 bp = Blueprint('users', __name__, url_prefix='/login/api/v1.0')
 
@@ -34,37 +34,13 @@ def login():
             usr = loginModel.login(session, user, password, device_id)
             session.commit()
 
-        if not usr:
-            with open_session() as session:
-                d = hydraModel.get_device_logins(session, device_id)
-                if d.errors < 5:
-                    d.errors = d.errors + 1
-                    session.commit()
+            status, response = hydraModel.process_user_login(session, device_id, challenge, usr)
+            session.commit()
 
-            if d.errors >= 5:
-                status, data = hydraModel.deny_login_challenge(challenge, user)
-                if status != 200:
-                    raise Exception(data)
-
-                response = {
-                    'redirect_to': data['redirect_to']
-                }
-
-            return jsonify({'status': 200, 'response': response})
-     
-        else:
-            status, data = hydraModel.accept_login_challenge(challenge, 'sadsadasd', remember=False)
-            if status != 200:
-                raise Exception(data)   
-
-            response = {
-                'redirect_to': data['redirect_to']
-            }
-
-            return jsonify({'status': 200, 'response': response})
-
+            return jsonify({'status':status, 'response':response}), status
+       
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)})
+        return jsonify({'status': 500, 'response':str(e)}), 500
 
 
 @bp.route('/challenge/<challenge>', methods=['POST'])
@@ -87,10 +63,10 @@ def get_challenge(challenge:str):
             'challenge': challenge,
             'skip': data['skip']
         }
-        return jsonify({'status': 200, 'response': response})
+        return jsonify({'status': 200, 'response': response}), 200
 
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)})
+        return jsonify({'status': 500, 'response':str(e)}), 500
 
 
 @bp.route('/consent/<challenge>', methods=['GET'])
@@ -119,10 +95,10 @@ def get_consent_challenge(challenge:str):
             'redirect_to': redirect['redirect_to']
         }
 
-        return jsonify({'status': 200, 'response': response})
+        return jsonify({'status': 200, 'response': response}), 200
 
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)})
+        return jsonify({'status': 500, 'response':str(e)}), 500
 
 
 @bp.route('/challenges', methods=['GET'])
@@ -131,10 +107,10 @@ def get_all_challenges():
         import json
         with open_session() as session:
             challenges = logModel.get_log_challenges(session)
-        return jsonify({'status': 200, 'response': challenges})
+        return jsonify({'status': 200, 'response': challenges}), 200
 
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)})
+        return jsonify({'status': 500, 'response':str(e)}), 500
 
 @bp.route('/consent_challenges', methods=['GET'])
 def get_all_consent_challenges():
@@ -142,10 +118,10 @@ def get_all_consent_challenges():
         import json
         with open_session() as session:
             challenges = logModel.get_consent_challenges(session)
-        return jsonify({'status': 200, 'response': challenges})
+        return jsonify({'status': 200, 'response': challenges}), 200
 
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)})
+        return jsonify({'status': 500, 'response':str(e)}), 500
 
 
 
@@ -158,8 +134,8 @@ def get_device_id():
         response = {
             'device_id': 'dsfdsfdsfd'
         }
-        return jsonify({'status': 200, 'response': response})
+        return jsonify({'status': 200, 'response': response}), 200
 
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)})
+        return jsonify({'status': 500, 'response':str(e)}), 500
 

@@ -5,7 +5,7 @@ import json
 from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, func, or_
 from sqlalchemy.orm import relationship
 
-from login.hydra.model.entities import Base
+from hydra.model.entities import Base
 
 def generateId():
     return str(uuid.uuid4())

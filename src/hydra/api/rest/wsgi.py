@@ -16,7 +16,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
     registro el encoder para json
 """
 
-from login.hydra.model.entities import AlchemyEncoder
+from hydra.model.entities import AlchemyEncoder
 app.json_encoder = AlchemyEncoder
 
 """

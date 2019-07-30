@@ -26,7 +26,7 @@ class AlchemyEncoder(json.JSONEncoder):
 
 Base = declarative_base()
 
-from .Hydra import ChallengeLog
+from .Hydra import DeviceLogins, ChallengeLog, ConsentChallengeLog
 
 def crear_tablas():
     engine = create_engine('postgresql://{}:{}@{}:{}/{}'.format(
