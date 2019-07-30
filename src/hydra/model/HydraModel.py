@@ -38,7 +38,7 @@ class HydraModel:
         }
         data = {
             'subject': uid,
-            'context': data,
+            #'context': data,
             'remember':remember,
             'remember_for': 1 if not remember else 0
         }
@@ -112,9 +112,9 @@ class HydraModel:
             session.add(d)
         return d
 
-    def process_user_login(self, session, device_id:str, challenge:str, user:dict = None):
+    def process_user_login(self, session, device_id:str, challenge:str, login:dict = None):
 
-        if not user:
+        if not login:
 
             """
             ''' login erróneo, chequeo la cantidad de intentos fallidos por device '''
@@ -143,7 +143,7 @@ class HydraModel:
             d = self.get_device_logins(session, device_id)
             d.success = d.success + 1
             
-            status, data = hydraModel.accept_login_challenge(challenge, device_id, user['id'], remember=False)
+            status, data = self.accept_login_challenge(challenge, device_id, login.usuario_id, remember=False)
             if status != 200:
                 raise Exception(data)   
 
