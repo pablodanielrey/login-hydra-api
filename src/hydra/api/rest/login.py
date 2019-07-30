@@ -31,7 +31,7 @@ def login():
 
         usr = None
         with open_session() as session:
-            usr = loginModel.login(session, user, password, device_id)
+            usr = loginModel.login(session, user, password, device_id, challenge)
             session.commit()
 
             status, response = hydraModel.process_user_login(session, device_id, challenge, usr)
