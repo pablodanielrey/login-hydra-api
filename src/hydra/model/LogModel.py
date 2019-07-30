@@ -38,6 +38,10 @@ class LogModel:
         q = session.query(ChallengeLog).order_by(ChallengeLog.created.desc()).all()
         return q
 
+    def get_log_challenge(self, session, challenge):
+        q = session.query(ChallengeLog).filter(ChallengeLog.challenge == challenge).one()
+        return q
+
     def get_consent_challenges(self, session):
         q = session.query(ConsentChallengeLog).order_by(ConsentChallengeLog.created.desc()).all()
         return q

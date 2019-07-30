@@ -31,6 +31,8 @@ def login():
 
         usr = None
         with open_session() as session:
+            log_challenge = logModel.get_log_challenge(session, challenge)
+
             usr = loginModel.login(session, user, password, device_id, challenge)
             session.commit()
 
@@ -131,8 +133,12 @@ def get_device_id():
         data = request.json
         logging.info(data)
 
+        with open_session() as session:
+            hash_ = loginModel.generate_device(session, data['app_version'], data)
+            session.commit()
+
         response = {
-            'device_id': 'dsfdsfdsfd'
+            'device_id': hash_
         }
         return jsonify({'status': 200, 'response': response}), 200
 
