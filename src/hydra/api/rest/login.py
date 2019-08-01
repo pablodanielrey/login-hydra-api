@@ -10,7 +10,7 @@ from flask import Blueprint, jsonify, request, send_file, make_response
 from hydra.api.rest.models import hydraModel, logModel, loginModel, qrModel
 from hydra.model import open_session
 
-bp = Blueprint('users', __name__, url_prefix='/login/api/v1.0')
+bp = Blueprint('login', __name__, url_prefix='/login/api/v1.0')
 
 
 @bp.route('/qrcode/<device_hash>', methods=['POST'])

@@ -18,7 +18,10 @@ class QrCode(Base):
     created = Column(DateTime())
 
     code = Column(String())
+
     challenge = Column(String())
+    device_id = Column(String())
+    redirect_to_accept = Column(String())
 
     activated = Column(Boolean(), default=False)
     redirect = Column(String())
