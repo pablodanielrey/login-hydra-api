@@ -30,4 +30,6 @@ app.url_map.converters['list'] = ListConverter
 """
 
 from . import login
+from . import qr
 app.register_blueprint(login.bp)
+app.register_blueprint(qr.bp)

@@ -26,7 +26,7 @@ class AlchemyEncoder(json.JSONEncoder):
 
 Base = declarative_base()
 
-from .Hydra import DeviceLogins, ChallengeLog, ConsentChallengeLog
+from .Hydra import DeviceLogins, LoginChallenge, ConsentChallenge
 from .QR import QrCode
 
 def crear_tablas():

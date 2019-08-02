@@ -23,9 +23,9 @@ class DeviceLogins(Base):
     success = Column(Integer(), default=0)
 
 
-class ChallengeLog(Base):
+class LoginChallenge(Base):
 
-    __tablename__ = 'challenge_log'
+    __tablename__ = 'login_challenge'
 
     id = Column(String, primary_key=True, default=generateId)
     created = Column(DateTime())
@@ -35,6 +35,7 @@ class ChallengeLog(Base):
     client_id = Column(String())
     client_url = Column(String())
     client_name = Column(String())
+    client_redirects = Column(String())
 
     user_id = Column(String())
     username = Column(String())
@@ -44,9 +45,9 @@ class ChallengeLog(Base):
     data = Column(String())
 
 
-class ConsentChallengeLog(Base):
+class ConsentChallenge(Base):
 
-    __tablename__ = 'challenge_consent'
+    __tablename__ = 'consent_challenge'
 
     id = Column(String, primary_key=True, default=generateId)
     created = Column(DateTime())

@@ -7,7 +7,7 @@ import pyqrcode
 
 from flask import Blueprint, jsonify, request, send_file, make_response
 
-from hydra.api.rest.models import hydraModel, logModel, loginModel, qrModel
+from hydra.api.rest.models import hydraModel, hydraLocalModel, loginModel, qrModel
 from hydra.model import open_session
 
 bp = Blueprint('qr', __name__, url_prefix='/login/api/v1.0')
@@ -45,14 +45,19 @@ def generate_qr_code(device_hash):
             """
 
             ''' verifico el challenge '''
-            status, ch = hydraModel.get_login_challenge(challenge)
-            if status != 200:
+            ch = hydraLocalModel.get_login_challenge(session, challenge)
+            if not ch:
                 return jsonify({'status':404, 'response':f'Challenge {challenge} no existente'}), 404
 
-            redirects = ch['client']['redirect_uris']
-            if redirect_to_accept not in redirects:
+            ''' verifico que la redirección enviada por el cliente se encuentre dentro de las registradas '''
+            redirects = ch.client_redirects
+            all_redirects = redirects.split(',')
+            for r_ in all_redirects:
+                if r_.split('/')[0] in redirect_to_accept:
+                    break
+            else:
                 return jsonify({'status':400, 'response':f'{redirect_to_accept} no se encuentra registrado para el cliente'}), 400
-
+                
 
             ''' genero el código qr '''
             code = qrModel.generate_qr(session, d.id, challenge, redirect_to_accept)
@@ -64,7 +69,7 @@ def generate_qr_code(device_hash):
 
             response = {
                 'code': code,
-                'qr_datauri': qr
+                'qr_datauri': datauri
             }
 
         return jsonify({'status':200, 'response':response}), 200
@@ -129,6 +134,12 @@ def login_hash(qr):
                 status = 404
                 return jsonify({'status':status, 'response':'Not found'}), status
 
+            ''' verifico que el challenge exista '''
+            ch = hydraLocalModel.get_login_challenge(session, qr.challenge)
+            if not ch:
+                status = 404
+                return jsonify({'status':status, 'response':'Not found'}), status                
+
             if not qr.activated:
                 challenge = qr.challenge
                 h = loginModel.login_hash(session, hash_, device_id, challenge)
@@ -136,6 +147,10 @@ def login_hash(qr):
                 qr.redirect = resp['redirect_to']
                 qr.activated = True
                 session.commit()
+            else:
+                ''' TODO: ver si esto esta ok '''
+                status = 304
+                return jsonify({'status':status, 'response':'Not Modified'}), status
 
             response = {
                 'code': qr,

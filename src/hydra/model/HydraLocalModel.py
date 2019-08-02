@@ -2,25 +2,31 @@
 import json
 import datetime
 
-from .entities.Hydra import ChallengeLog, ConsentChallengeLog
+from .entities.Hydra import LoginChallenge, ConsentChallenge
 
-class LogModel:
+class HydraLocalModel:
 
-    def log_challenge(self, session, challenge):
-        c = ChallengeLog()
+    def store_login_challenge(self, session, challenge):
+        c = LoginChallenge()
         c.created = datetime.datetime.utcnow()
         c.challenge = challenge['challenge']
         c.client_id = challenge['client']['client_id']
         c.client_name = challenge['client']['client_name']
         c.client_url = challenge['client']['client_uri']
+        c.client_redirects = challenge['client']['redirect_uris']
         c.username = ''
         c.user_id = challenge['subject']
         c.skip = challenge['skip']
         c.data = json.dumps(challenge)
         session.add(c)
 
-    def log_consent_challenge(self, session, challenge):
-        c = ConsentChallengeLog()
+    def get_login_challenge(self, session, challenge):
+        q = session.query(LoginChallenge).filter(LoginChallenge.challenge == challenge).one_or_none()
+        return q
+
+
+    def store_consent_challenge(self, session, challenge):
+        c = ConsentChallenge()
         c.created = datetime.datetime.utcnow()
         c.challenge = challenge['challenge']
         c.client_id = challenge['client']['client_id']
@@ -34,14 +40,7 @@ class LogModel:
         c.data = json.dumps(challenge)
         session.add(c)
 
-    def get_log_challenges(self, session):
-        q = session.query(ChallengeLog).order_by(ChallengeLog.created.desc()).all()
+    def get_consent_challenge(self, session, challenge):
+        q = session.query(ConsentChallenge).filter(ConsentChallenge.challenge == challenge).one_or_none()
         return q
 
-    def get_log_challenge(self, session, challenge):
-        q = session.query(ChallengeLog).filter(ChallengeLog.challenge == challenge).one()
-        return q
-
-    def get_consent_challenges(self, session):
-        q = session.query(ConsentChallengeLog).order_by(ConsentChallengeLog.created.desc()).all()
-        return q
