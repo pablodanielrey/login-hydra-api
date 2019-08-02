@@ -71,14 +71,15 @@ def get_challenge(challenge:str):
         device_hash = data['device_hash']
         ''' aca podría realizar cosas como rate limiting '''
 
-
         status, data = hydraModel.get_login_challenge(challenge)
         if status != 200:
             return jsonify({'status': 404, 'response': 'No encontrado'}), 404
 
         with open_session() as session:
-            hydraLocalModel.store_login_challenge(session, data)
-            session.commit() 
+            ch = hydraLocalModel.get_login_challenge(session, challenge)
+            if not ch:
+                hydraLocalModel.store_login_challenge(session, data)
+                session.commit() 
 
         response = {
             'challenge': data['challenge'],

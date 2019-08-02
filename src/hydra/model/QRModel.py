@@ -2,6 +2,8 @@
 import datetime
 import os
 
+from sqlalchemy import or_, and_
+
 from .entities.QR import QrCode
 
 class QRModel:
@@ -27,4 +29,8 @@ class QRModel:
 
     def get_qr_code(self, session, code:str) -> QrCode:
         q = session.query(QrCode).filter(QrCode.code == code).one()
+        return q
+
+    def get_qr_code_for_challenge(self, session, challenge) -> QrCode:
+        q = session.query(QrCode).filter(QrCode.challenge == challenge, QrCode.activated == False, QrCode.used == None).first()
         return q

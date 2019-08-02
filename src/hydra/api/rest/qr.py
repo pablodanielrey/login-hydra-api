@@ -60,8 +60,12 @@ def generate_qr_code(device_hash):
                 
 
             ''' genero el código qr '''
-            code = qrModel.generate_qr(session, d.id, challenge, redirect_to_accept)
-            session.commit()
+            qr = qrModel.get_qr_code_for_challenge(session, challenge)
+            if not qr:
+                code = qrModel.generate_qr(session, d.id, challenge, redirect_to_accept)
+                session.commit()
+            else:
+                code = qr.code
 
             url = f'{redirect_to_accept}/{code}'
             cqr = pyqrcode.create(url).png_as_base64_str(scale=3)
@@ -116,6 +120,12 @@ def get_login_hash(qr):
 
 @bp.route('/login_qrcode/<qr>', methods=['POST'])
 def login_hash(qr):
+    """
+        Activa un código qr.
+            Si el login es ok entonces se acepta el challenge y se asocia con el usuario determinado por el hash.
+            Si el login falla entonces se deniega el challenge.
+            En ambos casos se asocia la url a redireccionar al código qr.
+    """
     try:
         assert qr is not None
 
