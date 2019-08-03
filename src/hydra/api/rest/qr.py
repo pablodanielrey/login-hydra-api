@@ -160,7 +160,7 @@ def login_hash(qr):
             else:
                 ''' TODO: ver si esto esta ok '''
                 status = 304
-                return jsonify({'status':status, 'response':'Not Modified'}), status
+                return jsonify({'status':status, 'response':{error:'Not Modified'}}), status
 
             response = {
                 'code': qr,
