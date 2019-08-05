@@ -21,7 +21,7 @@ class HydraLocalModel:
         c.data = json.dumps(challenge)
         session.add(c)
 
-    def get_login_challenge(self, session, challenge):
+    def get_login_challenge(self, session, challenge) -> LoginChallenge:
         q = session.query(LoginChallenge).filter(LoginChallenge.challenge == challenge).one_or_none()
         return q
 

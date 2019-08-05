@@ -39,15 +39,33 @@ def login():
             usr, hash_ = loginModel.login(session, user, password, device_id, challenge)
             session.commit()
 
-            status, resp = hydraModel.process_user_login(session, device_id, challenge, usr.usuario_id if usr else None)
-            session.commit()
+            if usr:
+                status, data = hydraModel.accept_login_challenge(challenge, device_id, usr.usuario_id, remember=False)
+                if status == 409:
+                    ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
+                    redirect = ch.request_url
+                    response = {
+                        'hash': hash_,
+                        'redirect_to': redirect
+                    }
+                    return jsonify({'status':status, 'response':response}), status
+                if status != 200:
+                    raise Exception(data)
+                
+                response = {
+                    'hash': hash_,
+                    'redirect_to': data['redirect_to']
+                }
+                return jsonify({'status':status, 'response':response}), status
 
-            response = {
-                'hash': hash_,
-                'redirect_to': resp['redirect_to']
-            }
-
-            return jsonify({'status':status, 'response':response}), status
+            else:
+                status, resp = hydraModel.process_user_login(session, device_id, challenge, usr.usuario_id if usr else None)
+                session.commit()
+                response = {
+                    'hash': hash_,
+                    'redirect_to': resp['redirect_to']
+                }
+                return jsonify({'status':status, 'response':response}), status
        
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)}), 500
