@@ -37,6 +37,8 @@ class LoginChallenge(Base):
     client_name = Column(String())
     client_redirects = Column(String())
 
+    request_url = Column(String())
+
     user_id = Column(String())
     username = Column(String())
     

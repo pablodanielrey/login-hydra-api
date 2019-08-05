@@ -99,7 +99,19 @@ def get_login_hash(qr):
         with open_session() as session:
             qr = qrModel.get_qr_code(session, qr)
             if qr.used:
-                return jsonify({'status': 410, 'response':'Qr ya usado'}), 410
+                redirect = None
+                if qr.redirect == None:
+                    ''' retorno el inicio de todo el proceso de login '''
+                    challenge = qr.challenge
+                    ch = hydraLocalModel.get_login_challenge(session, challenge)
+                    if not ch:
+                        raise Exception('no debería ocurrir nunca - se retorna 404')
+                    redirect = ch.request_url
+
+                response = {
+                    'redirect_to': redirect
+                }                
+                return jsonify({'status': 410, 'response':response}), 410
 
             if qr.activated == True:
                 qr.used = datetime.datetime.utcnow()
@@ -153,14 +165,34 @@ def login_hash(qr):
             if not qr.activated:
                 challenge = qr.challenge
                 h = loginModel.login_hash(session, hash_, device_id, challenge)
-                status, resp = hydraModel.process_user_login(session, device_id, challenge, h.user_id if h else None)
-                qr.redirect = resp['redirect_to']
+                if h:
+                    status, data = hydraModel.accept_login_challenge(challenge, device_id, h.user_id, remember=False)
+                    if status == 409:
+                        ''' recurso ya procesado -- no esta en la doc de hydra. sacado de debug '''
+                        qr.activated = True
+                        qr.used = datetime.datetime.utcnow()
+                        session.commit()
+                        status = 410
+                        return jsonify({'status':status, 'response':{'error':'Ya activado'}}), status
+
+                else:
+                    status, data = hydraModel.deny_login_challenge(challenge, device_id, 'Credenciales incorrectas')
+                
+                if status != 200:
+                    ''' falló la comunicación con hydra '''
+                    response = {
+                        'redirect_to': '/',
+                        'error': str(data)
+                    }
+                    return jsonify({'status': 500, 'response':response}), 500
+
+                qr.redirect = data['redirect_to']
                 qr.activated = True
                 session.commit()
             else:
                 ''' TODO: ver si esto esta ok '''
-                status = 304
-                return jsonify({'status':status, 'response':{error:'Not Modified'}}), status
+                status = 410
+                return jsonify({'status':status, 'response':{'error':'Ya activado'}}), status
 
             response = {
                 'code': qr,

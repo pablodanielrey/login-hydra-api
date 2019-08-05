@@ -14,6 +14,7 @@ class HydraLocalModel:
         c.client_name = challenge['client']['client_name']
         c.client_url = challenge['client']['client_uri']
         c.client_redirects = challenge['client']['redirect_uris']
+        c.request_url = challenge['request_url']
         c.username = ''
         c.user_id = challenge['subject']
         c.skip = challenge['skip']
