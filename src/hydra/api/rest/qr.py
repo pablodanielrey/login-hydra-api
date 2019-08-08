@@ -149,6 +149,8 @@ def login_hash(qr):
         device_id = data['device_id']
         assert device_id is not None
 
+        position = data['position'] if 'position' in data else None
+
         with open_session() as session:
             ''' verifico que el qr exista y haya sido generado '''
             qr = qrModel.get_qr_code(session, qr)

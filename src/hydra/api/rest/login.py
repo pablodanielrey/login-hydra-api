@@ -152,6 +152,8 @@ def login():
         challenge = data['challenge']
         assert challenge is not None
 
+        position = data['position'] if 'position' in data else None
+
         usr = None
         with open_session() as session:
             ch = hydraLocalModel.get_login_challenge(session, challenge)
