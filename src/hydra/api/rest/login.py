@@ -12,8 +12,128 @@ from hydra.model import open_session
 
 bp = Blueprint('login', __name__, url_prefix='/login/api/v1.0')
 
+
+"""
+    Paso 1 - se obtiene un hash para el dispositivo que se encuentra accediendo al login.
+    este hash se usa para todos los otras apis. (es solo informativo ya que puede ser hackeado facilmente)
+"""
+
+@bp.route('/device', methods=['POST'])
+def get_device_id():
+    '''
+        Se obtiene un hash para el dispositivo. Se usa en todos las otras apis de login
+        respuestas:
+            200 - ok
+            500 - error irrecuperable
+    '''
+    try:
+        data = request.json
+        logging.info(data)
+
+        with open_session() as session:
+            hash_ = loginModel.generate_device(session, data['app_version'], data)
+            session.commit()
+
+        response = {
+            'device_hash': hash_
+        }
+        return jsonify({'status': 200, 'response': response}), 200
+
+    except Exception as e:
+        return jsonify({'status': 500, 'response':str(e)}), 500
+
+
+"""
+    Paso 2 - Se verifica que el challenge exista y si hay que saltar la autentificación
+"""
+@bp.route('/challenge/<challenge>', methods=['POST'])
+def get_challenge(challenge:str):
+    """
+        La app cliente accede para verificar los datos del challenge y si tiene que saltar la autentificación o no.
+        respuestas:
+            200 - todo ok - con skip = True en el caso de tener que saltar la autentificación
+            404 - (Not Found) - no se encuentra el challenge | error en hydra
+            409 - (Gone) - el challenge ya fue usado
+            500 - error del servidor
+
+    """
+    try:
+        assert challenge is not None
+
+        data = request.json
+        assert data['device_hash'] is not None
+
+        device_hash = data['device_hash']
+        ''' aca podría realizar cosas como rate limiting '''
+
+        status, data = hydraModel.get_login_challenge(challenge)
+        if status != 409:
+            return jsonify({'status': 409, 'response': {'error':'Ya usado'}}), 409
+        if status != 200:
+            return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
+
+        ch = None
+        try:
+            with open_session() as session:
+                ch = hydraLocalModel.get_login_challenge(session, challenge)
+                if not ch:
+                    hydraLocalModel.store_login_challenge(session, data)
+                    session.commit()
+                    ch = hydraLocalModel.get_login_challenge(session, challenge)
+
+        except Exception as e1:
+            response = {
+                'redirect_to': data['request_url'],
+                'error': str(e1)
+            }
+            return jsonify({'status': 500, 'response': response}), 500
+        
+        if data['skip']:
+            ''' si skip == True entonces hay que aceptar|denegar el challenge en hydra '''
+            uid = ch.user_id
+            status, data = hydraModel.accept_login_challenge(challenge, device_hash, uid, remember=False)
+            if status == 409:
+                ''' 
+                    El challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro.
+                    en este paso no debería pasar nunca!!!
+                '''
+                redirect = ch.request_url
+            if status != 200:
+                ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
+                redirect = ch.request_url
+
+            response = {
+                'challenge': ch.challenge,
+                'skip': True,
+                'redirect_to': redirect
+            }
+            return jsonify({'status':status, 'response':response}), status
+
+        else:
+            response = {
+                'challenge': ch.challenge,
+                'skip': False
+            }
+            return jsonify({'status': 200, 'response': response}), 200
+
+    except Exception as e:
+        response = {
+            'error': str(e)
+        }        
+        return jsonify({'status': 500, 'response':response}), 500
+
+
+
 @bp.route('/login', methods=['POST'])
 def login():
+    """
+        Logueo de un usuario mediante credenciales de usuario y clave.
+        Respuestas:
+            200 - ok
+            500 - excepción irrecuperable
+            404 - (Not Found) - challenge no encontrado
+            409 - (Gone) - challenge que existía pero ya fue usado
+    """
     try:
         data = request.json
 
@@ -36,77 +156,56 @@ def login():
                 status = 404
                 return jsonify({'status':status, 'response':'Not found'}), status
 
-            usr, hash_ = loginModel.login(session, user, password, device_id, challenge)
-            session.commit()
+            original_url = ch.request_url
 
-            if usr:
-                status, data = hydraModel.accept_login_challenge(challenge, device_id, usr.usuario_id, remember=False)
-                if status == 409:
-                    ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
-                    redirect = ch.request_url
+            try:
+                usr, hash_ = loginModel.login(session, user, password, device_id, challenge)
+                session.commit()
+
+                if usr:
+                    status, data = hydraModel.accept_login_challenge(challenge, device_id, usr.usuario_id, remember=False)
+                    if status == 409:
+                        ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
+                        redirect = ch.request_url
+                    if status != 200:
+                        ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
+                        redirect = original_url
+
                     response = {
                         'hash': hash_,
                         'redirect_to': redirect
                     }
                     return jsonify({'status':status, 'response':response}), status
-                if status != 200:
-                    raise Exception(data)
-                
-                response = {
-                    'hash': hash_,
-                    'redirect_to': data['redirect_to']
-                }
-                return jsonify({'status':status, 'response':response}), status
 
-            else:
-                status, resp = hydraModel.process_user_login(session, device_id, challenge, usr.usuario_id if usr else None)
-                session.commit()
+                else:
+                    d = hydraModel.get_device_logins(session, device_id)
+                    d.errors = d.errors + 1
+                    session.commit()
+        
+                    status, data = hydraModel.deny_login_challenge(challenge, device_id, 'Credenciales incorrectas')
+                    if status != 200:
+                        ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
+                        redirect = original_url
+                    else:
+                        redirect = data['redirect_to']
+            
+                    response = {
+                        'hash': hash_,
+                        'redirect_to': redirect
+                    }
+                    return jsonify({'status':status, 'response':response}), status
+
+            except Exception as e:
                 response = {
-                    'hash': hash_,
-                    'redirect_to': resp['redirect_to']
+                    'hash': None,
+                    'redirect_to': original_url,
+                    'error': str(e)
                 }
-                return jsonify({'status':status, 'response':response}), status
-       
+                return jsonify({'status': 500, 'response':response}), 500
+                    
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)}), 500
 
-
-@bp.route('/challenge/<challenge>', methods=['POST'])
-def get_challenge(challenge:str):
-    """
-        La app cliente accede para verificar los datos del challenge y si tiene que saltar la autentificación o no.
-        respuestas:
-            200 - todo ok - con skip = True en el caso de tener que saltar la autentificación
-            404 - (Not Found) - no se encuentra el challenge
-
-    """
-    try:
-        assert challenge is not None
-
-        data = request.json
-        assert data['device_hash'] is not None
-
-        device_hash = data['device_hash']
-        ''' aca podría realizar cosas como rate limiting '''
-
-        status, data = hydraModel.get_login_challenge(challenge)
-        if status != 200:
-            return jsonify({'status': 404, 'response': 'No encontrado'}), 404
-
-        with open_session() as session:
-            ch = hydraLocalModel.get_login_challenge(session, challenge)
-            if not ch:
-                hydraLocalModel.store_login_challenge(session, data)
-                session.commit() 
-
-        response = {
-            'challenge': data['challenge'],
-            'skip': data['skip']
-        }
-        return jsonify({'status': 200, 'response': response}), 200
-
-    except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)}), 500
 
 
 @bp.route('/consent/<challenge>', methods=['GET'])
@@ -135,25 +234,6 @@ def get_consent_challenge(challenge:str):
             'redirect_to': redirect['redirect_to']
         }
 
-        return jsonify({'status': 200, 'response': response}), 200
-
-    except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)}), 500
-
-
-@bp.route('/device', methods=['POST'])
-def get_device_id():
-    try:
-        data = request.json
-        logging.info(data)
-
-        with open_session() as session:
-            hash_ = loginModel.generate_device(session, data['app_version'], data)
-            session.commit()
-
-        response = {
-            'device_hash': hash_
-        }
         return jsonify({'status': 200, 'response': response}), 200
 
     except Exception as e:
