@@ -261,7 +261,7 @@ def get_consent_challenge(challenge:str):
                 'error': str(e1),
                 'redirect_to': original_url
             }
-            return jsonify({'status': 500, 'response':{'error':str(e)}}), 500
+            return jsonify({'status': 500, 'response':response), 500
 
     except Exception as e:
         return jsonify({'status': 500, 'response':{'error':str(e)}}), 500
