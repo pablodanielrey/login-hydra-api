@@ -67,7 +67,7 @@ def get_challenge(challenge:str):
         ''' aca podría realizar cosas como rate limiting '''
 
         status, data = hydraModel.get_login_challenge(challenge)
-        if status != 409:
+        if status == 409:
             return jsonify({'status': 409, 'response': {'error':'Ya usado'}}), 409
         if status != 200:
             return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
@@ -177,6 +177,8 @@ def login():
                     if status != 200:
                         ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
                         redirect = original_url
+                    else:
+                        redirect = data['redirect_to']
 
                     response = {
                         'hash': hash_,
