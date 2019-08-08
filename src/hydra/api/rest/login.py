@@ -123,6 +123,9 @@ def get_challenge(challenge:str):
         return jsonify({'status': 500, 'response':response}), 500
 
 
+"""
+    Paso 3 - el usuario se loguea usando credenciales.
+"""
 
 @bp.route('/login', methods=['POST'])
 def login():
@@ -154,7 +157,7 @@ def login():
             ch = hydraLocalModel.get_login_challenge(session, challenge)
             if not ch:
                 status = 404
-                return jsonify({'status':status, 'response':'Not found'}), status
+                return jsonify({'status':status, 'response':{'error':'Not found'}}), status
 
             original_url = ch.request_url
 
@@ -163,6 +166,10 @@ def login():
                 session.commit()
 
                 if usr:
+                    d = hydraModel.get_device_logins(session, device_id)
+                    d.success = d.success + 1
+                    session.commit()
+
                     status, data = hydraModel.accept_login_challenge(challenge, device_id, usr.usuario_id, remember=False)
                     if status == 409:
                         ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
@@ -195,21 +202,29 @@ def login():
                     }
                     return jsonify({'status':status, 'response':response}), status
 
-            except Exception as e:
+            except Exception as e1:
                 response = {
                     'hash': None,
                     'redirect_to': original_url,
-                    'error': str(e)
+                    'error': str(e1)
                 }
                 return jsonify({'status': 500, 'response':response}), 500
                     
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)}), 500
+        return jsonify({'status': 500, 'response':{'error':str(e)}}), 500
 
 
-
+"""
+    Paso 3 - Se acepta implícitamente el acceso a los datos del login por parte de la app cliente.
+"""
 @bp.route('/consent/<challenge>', methods=['GET'])
 def get_consent_challenge(challenge:str):
+    """
+        Acepta el consentimiento del usuario para el acceso a los datos de la app cliente.
+        respuestas:
+            200 - ok
+
+    """
     try:
         assert challenge is not None
 
@@ -217,25 +232,37 @@ def get_consent_challenge(challenge:str):
         if status != 200:
             raise Exception(data)
 
-        with open_session() as session:
-            hydraLocalModel.store_consent_challenge(session, data)
-            session.commit()
+        original_url = data['request_url']
 
-        scopes = data['requested_scope']
-        status, redirect = hydraModel.accept_consent_challenge(challenge, scopes, remember=False)
-        if status != 200:
-            raise Exception(data)
+        try:
+            with open_session() as session:
+                hydraLocalModel.store_consent_challenge(session, data)
+                session.commit()
 
-        response = {
-            'skip': data['skip'],
-            'scopes': data['requested_scope'],
-            'audience': data['requested_access_token_audience'],
-            'subject': data['subject'],
-            'redirect_to': redirect['redirect_to']
-        }
+            scopes = data['requested_scope']
+            status, redirect = hydraModel.accept_consent_challenge(challenge, scopes, remember=False)
+            if status != 200:
+                response = {
+                    'redirect_to': original_url
+                }
+                return jsonify({'status': status, 'response':response}), status
+            else:
+                response = {
+                    'skip': data['skip'],
+                    'scopes': data['requested_scope'],
+                    'audience': data['requested_access_token_audience'],
+                    'subject': data['subject'],
+                    'redirect_to': redirect['redirect_to']
+                }
+                return jsonify({'status': 200, 'response': response}), 200
 
-        return jsonify({'status': 200, 'response': response}), 200
+        except Exception as e1:
+            response = {
+                'error': str(e1),
+                'redirect_to': original_url
+            }
+            return jsonify({'status': 500, 'response':{'error':str(e)}}), 500
 
     except Exception as e:
-        return jsonify({'status': 500, 'response':str(e)}), 500
+        return jsonify({'status': 500, 'response':{'error':str(e)}}), 500
 
