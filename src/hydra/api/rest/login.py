@@ -134,7 +134,8 @@ def login():
         Respuestas:
             200 - ok
             500 - excepción irrecuperable
-            404 - (Not Found) - challenge no encontrado
+            400 - (Bad request) - challenge no encontrado
+            404 - (Not Found) - Usuario/clave no válidas
             409 - (Gone) - challenge que existía pero ya fue usado
     """
     try:
@@ -158,8 +159,8 @@ def login():
         with open_session() as session:
             ch = hydraLocalModel.get_login_challenge(session, challenge)
             if not ch:
-                status = 404
-                return jsonify({'status':status, 'response':{'error':'Not found'}}), status
+                status = 400
+                return jsonify({'status':status, 'response':{'error':'challenge not found'}}), status
 
             original_url = ch.request_url
 
@@ -200,6 +201,8 @@ def login():
                     else:
                         redirect = data['redirect_to']
             
+                    ''' seteo el codigo de error para 404 - debido a que las credenciales son incorrectas '''
+                    status = 404
                     response = {
                         'hash': hash_,
                         'redirect_to': redirect
