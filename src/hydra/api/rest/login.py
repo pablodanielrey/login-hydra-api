@@ -164,7 +164,7 @@ def login():
             original_url = ch.request_url
 
             try:
-                usr, hash_ = loginModel.login(session, user, password, device_id, challenge)
+                usr, hash_ = loginModel.login(session, user, password, device_id, challenge, position=position)
                 session.commit()
 
                 if usr:

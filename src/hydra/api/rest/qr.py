@@ -166,7 +166,7 @@ def login_hash(qr):
 
             if not qr.activated:
                 challenge = qr.challenge
-                h = loginModel.login_hash(session, hash_, device_id, challenge)
+                h = loginModel.login_hash(session, hash_, device_id, challenge, position=position)
                 if h:
                     status, data = hydraModel.accept_login_challenge(challenge, device_id, h.user_id, remember=False)
                     if status == 409:
