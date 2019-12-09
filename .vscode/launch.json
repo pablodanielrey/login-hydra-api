@@ -4,6 +4,16 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+        {
+            "type": "python",
+            "request": "attach",
+            "name": "Attach to Remote docker",
+            "host": "localhost",
+            "port": 10004,
+            "localRoot": "${workspaceFolder}/src",
+            "remoteRoot": "/src/"
+        },
         {
             "name": "Python: Flask",
             "type": "python",
