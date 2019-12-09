@@ -92,7 +92,13 @@ class HydraModel:
             'remember_for': 1 if not remember else 0,
             'session': {
                 'access_token':{},
-                'id_token':{}
+                'id_token':{
+                    'email':'pablodanielrey@gmail.com',
+                    'email_verified': True,
+                    'given_name': 'Pablo Daniel',
+                    'family_name': 'Rey',
+                    'preferred_username': '27294557'
+                }
             }
         }
         r = requests.put(url, params={'consent_challenge': challenge}, headers=h, json=data, verify=self.verify)
