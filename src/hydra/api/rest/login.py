@@ -169,6 +169,8 @@ def login():
                 session.commit()
 
                 if usr:
+                    # aca se debe obtener el usuario para poder setearlo dentro del idtoken
+
                     d = hydraModel.get_device_logins(session, device_id)
                     d.success = d.success + 1
                     session.commit()
