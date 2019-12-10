@@ -143,7 +143,7 @@ def _generate_context(user):
     }
 
     mail_context = None
-    mails = [m for m in user.mails if m.eliminado is None and m.confirmado]
+    mails = [m.email for m in user.mails if m.eliminado is None and m.confirmado]
     internals_mail = [m for m in mails if _is_internal_mail(m)]
 
     if len(internals_mail) > 0:
