@@ -36,6 +36,7 @@ setup(name='hydra-api',
                             'microservices_common>=2.0.8a1',
                             'warden-api',
                             'login-model',
+                            'users-model',
                             'ptvsd'],
           entry_points={
             'console_scripts': [
