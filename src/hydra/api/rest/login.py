@@ -1,5 +1,6 @@
 
 import logging
+import os
 import json
 import datetime
 from dateutil.parser import parse
@@ -128,11 +129,35 @@ def get_challenge(challenge:str):
 """
     Paso 3 - el usuario se loguea usando credenciales.
 """
-def _get_user_email(user):
-    for m in [m for m in user.mails if m.eliminado is None]:
-        if m.confirmado:
-            return m.email
-    return None
+INTERNAL_DOMAINS = os.environ['INTERNAL_DOMAINS'].split(',')
+
+def _is_internal_mail(mail):
+    return mail.split('@')[1] in INTERNAL_DOMAINS
+
+def _generate_context(user):
+    context = {
+        'sub':user.id, 
+        'given_name': user.nombre,
+        'family_name': user.apellido,
+        'preferred_username': user.dni                            
+    }
+
+    mail_context = None
+    mails = [m for m in user.mails if m.eliminado is None and m.confirmado]
+    internals_mail = [m for m in mails if _is_internal_mail(m)]
+
+    if len(internals_mail) > 0:
+        mail_context = internals_mail[0]
+    
+    if not mail_context:
+        externals_mails = [m for m in mails if not _is_internal_mail(m)]
+        if len(externals_mails) > 0:
+            mail_context = externals_mails[0]
+  
+    if mail_context:
+        context['email'] = mail_context
+        context['email_verified'] = True
+    return context
 
 @bp.route('/login', methods=['POST'])
 def login():
@@ -187,16 +212,7 @@ def login():
                         if not user:
                             raise Exception(f'no se pudo obtener usuario con uid : {uid}')
        
-                        context = {
-                            'sub':user.id, 
-                            'given_name': user.nombre,
-                            'family_name': user.apellido,
-                            'preferred_username': user.dni                            
-                        }
-                        mail_context = _get_user_email(user)
-                        if mail_context:
-                            context['email'] = mail_context
-                            context['email_verified'] = True
+                        context = _generate_context(user)
 
                     status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
                     if status == 409:
