@@ -191,10 +191,12 @@ def login():
                             'sub':user.id, 
                             'given_name': user.nombre,
                             'family_name': user.apellido,
-                            'email': _get_user_email(user),
-                            'email_verified': True,
-                            'preferred_username': user.dni
+                            'preferred_username': user.dni                            
                         }
+                        mail_context = _get_user_email(user)
+                        if mail_context:
+                            context['email'] = mail_context
+                            context['email_verified'] = True
 
                     status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
                     if status == 409:
