@@ -183,7 +183,7 @@ def login():
                             raise Exception(f'no se pudo obtener usuario con uid : {uid}')
 
                     context = json.dumps(user)
-                    status, data = hydraModel.accept_login_challenge(challenge, device_id, uid, data=context, remember=False)
+                    status, data = hydraModel.accept_login_challenge(challenge, device_id, uid, context, remember=False)
                     if status == 409:
                         ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
                         redirect = ch.request_url
