@@ -79,7 +79,7 @@ class HydraModel:
             return (200, r.json())
         return (r.status_code, str(r))
 
-    def accept_consent_challenge(self, challenge:str, scopes=[], remember=True):
+    def accept_consent_challenge(self, challenge:str, scopes=[], context={}, remember=True):
         url = f"{self.hydra_api}/oauth2/auth/requests/consent/accept"
         h = {
             'X-Forwarded-Proto':'https',
@@ -92,13 +92,7 @@ class HydraModel:
             'remember_for': 1 if not remember else 0,
             'session': {
                 'access_token':{},
-                'id_token':{
-                    'email':'pablodanielrey@gmail.com',
-                    'email_verified': True,
-                    'given_name': 'Pablo Daniel',
-                    'family_name': 'Rey',
-                    'preferred_username': '27294557'
-                }
+                'id_token': context
             }
         }
         r = requests.put(url, params={'consent_challenge': challenge}, headers=h, json=data, verify=self.verify)

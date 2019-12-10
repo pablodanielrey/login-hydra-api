@@ -270,7 +270,8 @@ def get_consent_challenge(challenge:str):
                 session.commit()
 
             scopes = data['requested_scope']
-            status, redirect = hydraModel.accept_consent_challenge(challenge, scopes, remember=False)
+            context = data['context']
+            status, redirect = hydraModel.accept_consent_challenge(challenge=challenge, scopes=scopes, context=context, remember=False)
             if status != 200:
                 response = {
                     'redirect_to': original_url
