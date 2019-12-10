@@ -129,7 +129,7 @@ def get_challenge(challenge:str):
     Paso 3 - el usuario se loguea usando credenciales.
 """
 def _get_user_email(user):
-    for m in user.mails:
+    for m in [m for m in user.mails if m.eliminado is None]:
         if m.confirmado:
             return m.email
     return None
