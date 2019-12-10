@@ -1,5 +1,6 @@
 
 import logging
+import json
 import datetime
 from dateutil.parser import parse
 import base64
@@ -7,8 +8,9 @@ import io
 
 from flask import Blueprint, jsonify, request, send_file, make_response
 
-from hydra.api.rest.models import hydraModel, hydraLocalModel, loginModel, qrModel
+from hydra.api.rest.models import hydraModel, hydraLocalModel, loginModel, usersModel
 from hydra.model import open_session
+import users.model
 
 bp = Blueprint('login', __name__, url_prefix='/login/api/v1.0')
 
@@ -169,13 +171,19 @@ def login():
                 session.commit()
 
                 if usr:
-                    # aca se debe obtener el usuario para poder setearlo dentro del idtoken
-
                     d = hydraModel.get_device_logins(session, device_id)
                     d.success = d.success + 1
                     session.commit()
 
-                    status, data = hydraModel.accept_login_challenge(challenge, device_id, usr.usuario_id, remember=False)
+                    # aca se debe obtener el usuario para poder setearlo dentro del idtoken
+                    uid = usr.usuario_id
+                    with users.model.open_session() as users_session:
+                        user = usersModel.get_user(users_session, uid)
+                        if not user:
+                            raise Exception(f'no se pudo obtener usuario con uid : {uid}')
+
+                    context = json.dumps(user)
+                    status, data = hydraModel.accept_login_challenge(challenge, device_id, uid, data=context, remember=False)
                     if status == 409:
                         ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
                         redirect = ch.request_url

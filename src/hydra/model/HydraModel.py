@@ -38,7 +38,7 @@ class HydraModel:
         }
         data = {
             'subject': uid,
-            #'context': data,
+            'context': data,
             'remember':remember,
             'remember_for': 1 if not remember else 0
         }
