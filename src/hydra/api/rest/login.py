@@ -128,6 +128,11 @@ def get_challenge(challenge:str):
 """
     Paso 3 - el usuario se loguea usando credenciales.
 """
+def _get_user_email(user):
+    for m in user.mails:
+        if m.confirmado:
+            return m.email
+    return None
 
 @bp.route('/login', methods=['POST'])
 def login():
@@ -181,9 +186,17 @@ def login():
                         user = usersModel.get_user(users_session, uid)
                         if not user:
                             raise Exception(f'no se pudo obtener usuario con uid : {uid}')
+       
+                        context = {
+                            'sub':user.id, 
+                            'given_name': user.nombre,
+                            'family_name': user.apellido,
+                            'email': _get_user_email(user),
+                            'email_verified': True,
+                            'preferred_username': user.dni
+                        }
 
-                    context = json.dumps(user)
-                    status, data = hydraModel.accept_login_challenge(challenge, device_id, uid, context, remember=False)
+                    status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
                     if status == 409:
                         ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
                         redirect = ch.request_url
