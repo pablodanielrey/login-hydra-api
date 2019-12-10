@@ -91,7 +91,7 @@ class HydraModel:
             'remember':remember,
             'remember_for': 1 if not remember else 0,
             'session': {
-                'access_token':{},
+                'access_token':context,
                 'id_token': context
             }
         }
