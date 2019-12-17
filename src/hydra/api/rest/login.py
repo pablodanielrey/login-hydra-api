@@ -11,7 +11,7 @@ from flask import Blueprint, jsonify, request, send_file, make_response
 
 from hydra.api.rest.models import hydraModel, hydraLocalModel, loginModel, usersModel
 from hydra.model import open_session
-import users.model
+from users.model import open_session as open_users_session
 
 bp = Blueprint('login', __name__, url_prefix='/login/api/v1.0')
 
@@ -207,11 +207,12 @@ def login():
 
                     # aca se debe obtener el usuario para poder setearlo dentro del idtoken
                     uid = usr.usuario_id
-                    with users.model.open_session() as users_session:
-                        user = usersModel.get_user(users_session, uid)
-                        if not user:
+                    with open_users_session() as users_session:
+                        users = usersModel.get_users(users_session, [uid])
+                        if not users or len(users) <= 0:
                             raise Exception(f'no se pudo obtener usuario con uid : {uid}')
        
+                        user = users[0]
                         context = _generate_context(user)
 
                     status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
