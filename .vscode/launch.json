@@ -11,6 +11,7 @@
             "name": "Attach to Remote docker",
             "host": "localhost",
             "port": 10004,
+            "justMyCode": false,
             "localRoot": "${workspaceFolder}/src",
             "remoteRoot": "/src/"
         },

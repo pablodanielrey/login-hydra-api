@@ -137,13 +137,13 @@ def _is_internal_mail(mail):
 def _generate_context(user):
     context = {
         'sub':user.id, 
-        'given_name': user.nombre,
-        'family_name': user.apellido,
-        'preferred_username': user.dni                            
+        'given_name': user.firstname,
+        'family_name': user.lastname,
+        'preferred_username': user.person_number                            
     }
 
     mail_context = None
-    mails = [m.email for m in user.mails if m.eliminado is None and m.confirmado]
+    mails = [m.email for m in user.mails if m.deleted is None and m.confirmed]
     internals_mail = [m for m in mails if _is_internal_mail(m)]
 
     if len(internals_mail) > 0:

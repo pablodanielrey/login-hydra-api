@@ -6,7 +6,6 @@ COPY docker/supervisor/rest.conf /etc/supervisor/conf.d
 COPY scripts /scripts
 COPY src /src
 
-
 WORKDIR /src
 
 EXPOSE 10002
