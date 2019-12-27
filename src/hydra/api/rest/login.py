@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, request, send_file, make_response
 from hydra.api.rest.models import hydraModel, hydraLocalModel, loginModel, usersModel
 from hydra.model import open_session
 from users.model import open_session as open_users_session
+from users.model.entities.User import IdentityNumber, IdentityNumberTypes, User
 
 bp = Blueprint('login', __name__, url_prefix='/login/api/v1.0')
 
@@ -134,12 +135,18 @@ INTERNAL_DOMAINS = os.environ['INTERNAL_DOMAINS'].split(',')
 def _is_internal_mail(mail):
     return mail.split('@')[1] in INTERNAL_DOMAINS
 
+def _get_user_dni(user:User):
+    for i in user.identity_numbers:
+        if i.type == IdentityNumberTypes.DNI:
+            return i.number
+    return ''
+
 def _generate_context(user):
     context = {
         'sub':user.id, 
         'given_name': user.firstname,
         'family_name': user.lastname,
-        'preferred_username': user.person_number                            
+        'preferred_username': _get_user_dni(user)                           
     }
 
     mail_context = None
