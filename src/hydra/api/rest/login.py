@@ -34,8 +34,15 @@ def get_device_id():
         data = request.json
         logging.info(data)
 
+        if not data:
+            data = {}
+
+        description = 'new device'
+        if 'app_version' in data:
+            description = data['app_version']
+
         with open_session() as session:
-            hash_ = loginModel.generate_device(session, data['app_version'], data)
+            hash_ = loginModel.generate_device(session, description, data)
             session.commit()
 
         response = {
@@ -180,17 +187,23 @@ def login():
     try:
         data = request.json
 
-        user = data['user']
-        assert user is not None
+        try:
+            user = data['user']
+            assert user is not None
 
-        password = data['password']
-        assert password is not None
+            password = data['password']
+            assert password is not None
 
-        device_id = data['device_id']
-        assert device_id is not None
+            challenge = data['challenge']
+            assert challenge is not None
 
-        challenge = data['challenge']
-        assert challenge is not None
+            device_id = data['device_id']
+            assert device_id is not None
+        except Exception:
+            status = 400
+            return jsonify({'status':status, 'response':{'error':'malformed request'}}), status
+
+
 
         position = data['position'] if 'position' in data else None
 
