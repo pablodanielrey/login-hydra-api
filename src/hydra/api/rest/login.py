@@ -203,8 +203,6 @@ def login():
             status = 400
             return jsonify({'status':status, 'response':{'error':'malformed request'}}), status
 
-
-
         position = data['position'] if 'position' in data else None
 
         usr = None
