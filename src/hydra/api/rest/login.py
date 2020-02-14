@@ -224,7 +224,7 @@ def login():
                     session.commit()
 
                     # aca se debe obtener el usuario para poder setearlo dentro del idtoken
-                    uid = usr.usuario_id
+                    uid = usr.user_id
                     with open_users_session() as users_session:
                         users = usersModel.get_users(users_session, [uid])
                         if not users or len(users) <= 0:
