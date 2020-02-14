@@ -5,7 +5,8 @@ logging.getLogger().propagate = True
 
 from flask import Flask
 from flask_cors import CORS
-from werkzeug.contrib.fixers import ProxyFix
+#from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 app.debug = False
