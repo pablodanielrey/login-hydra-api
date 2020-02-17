@@ -39,7 +39,7 @@ with open(f_to_read,'r') as f:
                             l.type = IdentityNumberTypes.STUDENT
                             l.number = student_number
                             s.add(l)
-                            #s.commit()
+                            s.commit()
 
                     if not uid:
                         log.write(f'Insertando - {firstname} {lastname} {username} {student_number} {email}\n')
