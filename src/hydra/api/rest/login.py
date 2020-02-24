@@ -148,13 +148,22 @@ def _get_user_dni(user:User):
             return i.number
     return ''
 
+def _get_user_student_number(user:User):
+    for i in user.identity_numbers:
+        if i.type == IdentityNumberTypes.STUDENT:
+            return i.number
+    return None
+
 def _generate_context(user):
     context = {
         'sub':user.id, 
         'given_name': user.firstname,
         'family_name': user.lastname,
-        'preferred_username': _get_user_dni(user)                           
+        'preferred_username': _get_user_dni(user)
     }
+    student_number = _get_user_student_number(user)
+    if student_number:
+        context['student_number'] = student_number
 
     mail_context = None
     mails = [m.email for m in user.mails if m.deleted is None and m.confirmed]
