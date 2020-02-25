@@ -28,18 +28,19 @@ with open(f_to_read,'r') as f:
                         users = UsersModel.get_users(s, [uid])
                         assert len(users) > 0
                         user = users[0]
-                        # busco legajo y lo agrego en el caso de que no tenga
-                        student_numbers = [l for l in user.identity_numbers if l.type == IdentityNumberTypes.STUDENT]
-                        if len(student_numbers) < 0:
-                            #print(f'Agregando legajo - {firstname} {lastname} {dni} {student_number}')
-                            log.write(f'Agregando legajo - {firstname} {lastname} {dni} {student_number}\n')
-                            l = IdentityNumber()
-                            l.id = str(uuid.uuid4())
-                            l.user_id = uid
-                            l.type = IdentityNumberTypes.STUDENT
-                            l.number = student_number
-                            s.add(l)
-                            s.commit()
+                        if student_number and student_number != '':
+                            # busco legajo y lo agrego en el caso de que no tenga
+                            student_numbers = [l for l in user.identity_numbers if l.type == IdentityNumberTypes.STUDENT]
+                            if len(student_numbers) < 0:
+                                #print(f'Agregando legajo - {firstname} {lastname} {dni} {student_number}')
+                                log.write(f'Agregando legajo - {firstname} {lastname} {dni} {student_number}\n')
+                                l = IdentityNumber()
+                                l.id = str(uuid.uuid4())
+                                l.user_id = uid
+                                l.type = IdentityNumberTypes.STUDENT
+                                l.number = student_number
+                                s.add(l)
+                                s.commit()
 
                     if not uid:
                         log.write(f'Insertando - {firstname} {lastname} {username} {student_number} {email}\n')
@@ -57,12 +58,13 @@ with open(f_to_read,'r') as f:
                         idni.type = IdentityNumberTypes.DNI
                         s.add(idni)
 
-                        student = IdentityNumber()
-                        student.id = str(uuid.uuid4())
-                        student.user_id = uid
-                        student.number = student_number
-                        student.type = IdentityNumberTypes.STUDENT
-                        s.add(student)
+                        if student_number and student_number != '':
+                            student = IdentityNumber()
+                            student.id = str(uuid.uuid4())
+                            student.user_id = uid
+                            student.number = student_number
+                            student.type = IdentityNumberTypes.STUDENT
+                            s.add(student)
 
                         m = Mail()
                         m.id = str(uuid.uuid4())
