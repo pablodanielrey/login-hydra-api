@@ -26,16 +26,7 @@ class AlchemyEncoder(json.JSONEncoder):
 
 Base = declarative_base()
 
-from .Hydra import DeviceLogins, LoginChallenge, ConsentChallenge
-from .QR import QrCode
 
-def crear_tablas():
-    engine = create_engine('postgresql://{}:{}@{}:{}/{}'.format(
-        os.environ['DB_USER'],
-        os.environ['DB_PASSWORD'],
-        os.environ['DB_HOST'],
-        os.environ.get('DB_PORT',5432),
-        os.environ['DB_NAME']
-    ), echo=True)
-    Base.metadata.create_all(engine)
+
+
 
