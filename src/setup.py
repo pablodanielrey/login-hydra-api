@@ -12,7 +12,7 @@
 from setuptools import setup, find_packages
 
 setup(name='hydra-api',
-          version='0.3.1',
+          version='0.4.0',
           description='Proyecto que implementa la api de login de hydra',
           url='https://github.com/pablodanielrey/login-hydra-api',
           author='Desarrollo DiTeSi, FCE',
