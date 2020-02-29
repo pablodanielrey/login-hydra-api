@@ -28,6 +28,7 @@ with open(f_to_read,'r') as f:
                         users = UsersModel.get_users(s, [uid])
                         assert len(users) > 0
                         user = users[0]
+
                         if student_number and student_number != '':
                             # busco legajo y lo agrego en el caso de que no tenga
                             student_numbers = [l for l in user.identity_numbers if l.type == IdentityNumberTypes.STUDENT]
@@ -77,7 +78,6 @@ with open(f_to_read,'r') as f:
                 if uid:
                     with obtener_session(False) as s2:
                         uc = s2.query(UserCredentials).filter(UserCredentials.username == dni).one_or_none()
-                        """
                         if uc:
                             print(f'reseteando login para {uid} - {dni}')
                             uc.updated = datetime.datetime.utcnow()
@@ -85,7 +85,7 @@ with open(f_to_read,'r') as f:
                             uc.credentials = dni
                             uc.temporal = True
                             uc.expiration = datetime.datetime.utcnow() + datetime.timedelta(days=365)
-                        """
+
                         if not uc:
                             log.write(f'creando login para {uid} - {dni}\n')
                             uc = UserCredentials()
@@ -96,6 +96,7 @@ with open(f_to_read,'r') as f:
                             uc.temporal = True
                             uc.expiration = datetime.datetime.utcnow() + datetime.timedelta(days=365)
                             s2.add(uc)
+
                         s2.commit()
 
             except Exception as e:
