@@ -46,8 +46,8 @@ def analize(challenge):
             en caso de no tenerlo hace falta configurar un correo.
         """
         configure = True
-        #if 'email' in chdata['context']:
-        #    configure = False
+        if 'email' in chdata['context']:
+            configure = False
 
         response = {
             "configure": configure,
