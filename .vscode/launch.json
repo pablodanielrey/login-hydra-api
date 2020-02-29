@@ -12,14 +12,17 @@
             "host": "163.10.17.14",
             "port": 10004,
             "justMyCode": false,
-            "localRoot": "${workspaceFolder}/src",
-            "remoteRoot": "/src/"
+            "pathMappings": [{
+                "localRoot": "${workspaceFolder}/src",
+                "remoteRoot": "/src/"
+            }]
         },
         {
             "name": "Python: Flask",
             "type": "python",
             "request": "launch",
             "module": "flask",
+            "justMyCode": false,
             "env": {
                 "FLASK_APP": "hydra.api.rest.wsgi.py",
                 "FLASK_ENV": "development",
