@@ -22,21 +22,24 @@ bp = Blueprint('email', __name__, url_prefix='/email/api/v1.0')
 @bp.route('/analize/<challenge>', methods=['POST'])
 def analize(challenge):
     try:
-        data = request.json
-        """
-        assert data and 'device' in data and data['device'] is not None
-        assert data and 'email' in data and data['email'] is not None
-        assert data and 'user' in data and data['user'] is not None
-        """
+        #data = request.json
 
-        #device = data['device']
+        status, chdata = hydraModel.get_consent_challenge(challenge)
+        if status != 200:
+            raise Exception('error obteniendo los datos del challenge')
 
-        ch = hydraModel.get_consent_challenge(challenge)
+        """
+            verifica si tiene email configurado en el contexto.
+            en caso de no tenerlo hace falta seguir con el proceso de config.
+            en el caso de tenerlo, no hace falta seguir con el proceso de config. 
+        """
+        configure = True
+        if 'email' in chdata['context']:
+            configure = False
 
         response = {
-            "configure": True,
-            "challenge": challenge,
-            "redirect_to": ""
+            "configure": configure,
+            "challenge": challenge
         }
 
         response = {
@@ -45,28 +48,6 @@ def analize(challenge):
         }
         return jsonify(response), 200
 
-        """
-        with users_open_session() as user_session:
-            with open_session() as recover_session:
-                try:
-                    model = RecoverModel(recover_session, user_session, loginModel, mailsModel, INTERNAL_DOMAINS, RESET_FROM)
-                    r = model.recover_for(user, device)
-                    recover_session.commit()
-
-                    response = {
-                        'status': 200,
-                        'response': r
-                    }
-                    return jsonify(response), 200
-
-                except Exception as e:
-                    recover_session.rollback()
-                    response = {
-                        'status': 400,
-                        'response': str(e)
-                    }
-                    return jsonify(response), 200
-"""
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)}), 500
 

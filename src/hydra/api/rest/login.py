@@ -317,6 +317,19 @@ def get_consent_challenge(challenge:str):
 
             scopes = data['requested_scope']
             context = data['context']
+
+
+            # aca se debe obtener el usuario para chequear si se debe actualizar el contexto.
+            uid = context['sub']
+            with open_users_session() as users_session:
+                users = usersModel.get_users(users_session, [uid])
+                if not users or len(users) <= 0:
+                    raise Exception(f'no se pudo obtener usuario con uid : {uid}')
+
+                user = users[0]
+                context = _generate_context(user)
+
+
             status, redirect = hydraModel.accept_consent_challenge(challenge=challenge, scopes=scopes, context=context, remember=False)
             if status != 200:
                 response = {
