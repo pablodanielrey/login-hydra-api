@@ -178,34 +178,5 @@ def verify_code(code):
         }
         return jsonify(response), 200
 
-
-        """
-        user = data['user']
-
-        with users_open_session() as user_session:
-            with open_session() as recover_session:
-                try:
-                    model = RecoverModel(recover_session, user_session, loginModel, mailsModel, INTERNAL_DOMAINS, RESET_FROM)
-                    r = model.verify_code(user, code)
-                    recover_session.commit()
-
-                    response = {
-                        'status': 200,
-                        'response': {
-                            'session':r
-                        }
-                    }
-                    return jsonify(response), 200
-
-                except Exception as e:
-                    recover_session.rollback()
-                    response = {
-                        'status': 400,
-                        'response': str(e)
-                    }
-                    return jsonify(response), 200        
-
-        """
-
     except Exception as e:
         return jsonify({'status': 500, 'response':str(e)}), 500
