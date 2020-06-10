@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo docker build -t hydra-api -f docker/dockerfile .
+docker build -t hydra-api -f docker/dockerfile .
