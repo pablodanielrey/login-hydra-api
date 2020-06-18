@@ -71,7 +71,7 @@ def get_challenge(challenge:str):
     try:
         assert challenge is not None
 
-        data = request.json
+        #data = request.json
         #assert data['device_hash'] is not None
         #device_hash = data['device_hash']
 
