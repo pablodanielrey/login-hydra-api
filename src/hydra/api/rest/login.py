@@ -84,6 +84,9 @@ def get_challenge(challenge:str):
             return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
 
         ch = None
+        ch = hydraLocalModel.get_challenge(data)
+        
+        """
         try:
             with open_session() as session:
                 ch = hydraLocalModel.get_login_challenge(session, challenge)
@@ -98,6 +101,7 @@ def get_challenge(challenge:str):
                 'error': str(e1)
             }
             return jsonify({'status': 500, 'response': response}), 500
+        """
         
         if data['skip']:
             ''' si skip == True entonces hay que aceptar|denegar el challenge en hydra '''

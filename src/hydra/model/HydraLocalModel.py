@@ -6,7 +6,7 @@ from .entities.Hydra import LoginChallenge, ConsentChallenge
 
 class HydraLocalModel:
 
-    def store_login_challenge(self, session, challenge):
+    def get_challenge(self, challenge):
         c = LoginChallenge()
         c.created = datetime.datetime.utcnow()
         c.challenge = challenge['challenge']
@@ -19,6 +19,10 @@ class HydraLocalModel:
         c.user_id = challenge['subject']
         c.skip = challenge['skip']
         c.data = json.dumps(challenge)
+        return c
+
+    def store_login_challenge(self, session, challenge):
+        c = self.get_challenge(challenge)
         session.add(c)
 
     def get_login_challenge(self, session, challenge) -> LoginChallenge:
