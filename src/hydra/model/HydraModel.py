@@ -66,8 +66,6 @@ class HydraModel:
             return (200, r.json())
         return (r.status_code, str(r))
 
-
-
     def get_consent_challenge(self, challenge:str):
         url = f"{self.hydra_api}/oauth2/auth/requests/consent"
         h = {
@@ -100,7 +98,6 @@ class HydraModel:
             return (200, r.json())
         return (r.status_code, str(r))
 
-
     def get_device_logins(self, session, device_id:str):
         d = session.query(DeviceLogins).filter(DeviceLogins.device_id == device_id).one_or_none()
         if not d:
@@ -115,7 +112,6 @@ class HydraModel:
     def process_user_login(self, session, device_id:str, challenge:str, user_id:str = None):
 
         if not user_id:
-
             """
             ''' login erróneo, chequeo la cantidad de intentos fallidos por device '''
             d = self.get_device_logins(session, device_id)
@@ -151,3 +147,4 @@ class HydraModel:
                 'redirect_to': data['redirect_to']
             }
             return  200, response
+

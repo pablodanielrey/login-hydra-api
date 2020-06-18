@@ -72,9 +72,9 @@ def get_challenge(challenge:str):
         assert challenge is not None
 
         data = request.json
-        assert data['device_hash'] is not None
+        #assert data['device_hash'] is not None
+        #device_hash = data['device_hash']
 
-        device_hash = data['device_hash']
         ''' aca podría realizar cosas como rate limiting '''
 
         status, data = hydraModel.get_login_challenge(challenge)
