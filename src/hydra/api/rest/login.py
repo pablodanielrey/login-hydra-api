@@ -200,101 +200,109 @@ def login():
             404 - (Not Found) - Usuario/clave no válidas
             409 - (Gone) - challenge que existía pero ya fue usado
     """
+    data = request.json
+
     try:
-        data = request.json
+        user = data['user']
+        assert user is not None
 
-        try:
-            user = data['user']
-            assert user is not None
+        password = data['password']
+        assert password is not None
 
-            password = data['password']
-            assert password is not None
+        challenge = data['challenge']
+        assert challenge is not None
 
-            challenge = data['challenge']
-            assert challenge is not None
+        #device_id = data['device_id']
+        #assert device_id is not None
+    except Exception:
+        status = 400
+        return jsonify({'status':status, 'response':{'error':'malformed request'}}), status
 
-            device_id = data['device_id']
-            assert device_id is not None
-        except Exception:
-            status = 400
-            return jsonify({'status':status, 'response':{'error':'malformed request'}}), status
+    position = data['position'] if 'position' in data else None
 
-        position = data['position'] if 'position' in data else None
+    # obtengo el challenge de hydra.
+    status, ch = hydraModel.get_login_challenge(challenge)
+    if status == 409:
+        return jsonify({'status': 409, 'response': {'error':'Ya usado'}}), 409
+    if status != 200:
+        return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
 
+    original_url = ch['request_url']
+    try:
         usr = None
         with open_session() as session:
+            """
             ch = hydraLocalModel.get_login_challenge(session, challenge)
             if not ch:
                 status = 400
                 return jsonify({'status':status, 'response':{'error':'challenge not found'}}), status
-
             original_url = ch.request_url
+            """
+            usr, hash_ = loginModel.login(session, user, password, None, challenge, position=position)
+            session.commit()
 
-            try:
-                usr, hash_ = loginModel.login(session, user, password, device_id, challenge, position=position)
-                session.commit()
+        if usr:
+            """
+            d = hydraModel.get_device_logins(session, device_id)
+            d.success = d.success + 1
+            session.commit()
+            """
+            # aca se debe obtener el usuario para poder setearlo dentro del idtoken
+            uid = usr.user_id
+            with open_users_session() as users_session:
+                users = usersModel.get_users(users_session, [uid])
+                if not users or len(users) <= 0:
+                    raise Exception(f'no se pudo obtener usuario con uid : {uid}')
 
-                if usr:
-                    d = hydraModel.get_device_logins(session, device_id)
-                    d.success = d.success + 1
-                    session.commit()
+                user = users[0]
+                context = _generate_context(user)
 
-                    # aca se debe obtener el usuario para poder setearlo dentro del idtoken
-                    uid = usr.user_id
-                    with open_users_session() as users_session:
-                        users = usersModel.get_users(users_session, [uid])
-                        if not users or len(users) <= 0:
-                            raise Exception(f'no se pudo obtener usuario con uid : {uid}')
-       
-                        user = users[0]
-                        context = _generate_context(user)
+            status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
+            if status == 409:
+                ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
+                redirect = ch['request_url']
+            if status != 200:
+                ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
+                redirect = original_url
+            else:
+                redirect = data['redirect_to']
 
-                    status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
-                    if status == 409:
-                        ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
-                        redirect = ch.request_url
-                    if status != 200:
-                        ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
-                        redirect = original_url
-                    else:
-                        redirect = data['redirect_to']
+            response = {
+                'hash': hash_,
+                'redirect_to': redirect
+            }
+            return jsonify({'status':status, 'response':response}), status
 
-                    response = {
-                        'hash': hash_,
-                        'redirect_to': redirect
-                    }
-                    return jsonify({'status':status, 'response':response}), status
+        else:
+            """
+            d = hydraModel.get_device_logins(session, device_id)
+            d.errors = d.errors + 1
+            session.commit()
+            """
 
-                else:
-                    d = hydraModel.get_device_logins(session, device_id)
-                    d.errors = d.errors + 1
-                    session.commit()
-        
-                    status, data = hydraModel.deny_login_challenge(challenge, device_id, 'Credenciales incorrectas')
-                    if status != 200:
-                        ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
-                        redirect = original_url
-                    else:
-                        redirect = data['redirect_to']
-            
-                    ''' seteo el codigo de error para 404 - debido a que las credenciales son incorrectas '''
-                    status = 404
-                    response = {
-                        'hash': hash_,
-                        'redirect_to': redirect
-                    }
-                    return jsonify({'status':status, 'response':response}), status
+            status, data = hydraModel.deny_login_challenge(challenge, None, 'Credenciales incorrectas')
+            if status != 200:
+                ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
+                redirect = original_url
+            else:
+                redirect = data['redirect_to']
 
-            except Exception as e1:
-                response = {
-                    'hash': None,
-                    'redirect_to': original_url,
-                    'error': str(e1)
-                }
-                return jsonify({'status': 500, 'response':response}), 500
-                    
-    except Exception as e:
-        return jsonify({'status': 500, 'response':{'error':str(e)}}), 500
+            ''' seteo el codigo de error para 404 - debido a que las credenciales son incorrectas '''
+            status = 404
+            response = {
+                'hash': hash_,
+                'redirect_to': redirect
+            }
+            return jsonify({'status':status, 'response':response}), status
+
+    except Exception as e1:
+        response = {
+            'hash': None,
+            'redirect_to': original_url,
+            'error': str(e1)
+        }
+        return jsonify({'status': 500, 'response':response}), 500
+
 
 
 """
@@ -313,14 +321,20 @@ def get_consent_challenge(challenge:str):
 
         status, data = hydraModel.get_consent_challenge(challenge)
         if status != 200:
-            raise Exception(data)
+            response = {
+                'error': 'Error obteniendo el consent desde el servidor',
+                'redirect_to': ''
+            }
+            return jsonify({'status': 500, 'response':response}), 500
 
         original_url = data['request_url']
 
         try:
+            """
             with open_session() as session:
                 hydraLocalModel.store_consent_challenge(session, data)
                 session.commit()
+            """
 
             scopes = data['requested_scope']
             context = data['context']
