@@ -83,10 +83,8 @@ def get_challenge(challenge:str):
         if status != 200:
             return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
 
-        ch = None
-        ch = hydraLocalModel.get_challenge(data)
-        
         """
+        ch = None
         try:
             with open_session() as session:
                 ch = hydraLocalModel.get_login_challenge(session, challenge)
@@ -105,20 +103,24 @@ def get_challenge(challenge:str):
         
         if data['skip']:
             ''' si skip == True entonces hay que aceptar|denegar el challenge en hydra '''
-            uid = ch.user_id
-            status, data = hydraModel.accept_login_challenge(challenge, device_hash, uid, remember=False)
+            #uid = ch.user_id
+            uid = data['subject']
+            status, data = hydraModel.accept_login_challenge(challenge, uid, {}, remember=False)
             if status == 409:
                 ''' 
                     El challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro.
                     en este paso no debería pasar nunca!!!
                 '''
-                redirect = ch.request_url
+                #redirect = ch.request_url
+                redirect = data['request_url']
             if status != 200:
                 ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
-                redirect = ch.request_url
+                #redirect = ch.request_url
+                redirect = data['request_url']
 
             response = {
-                'challenge': ch.challenge,
+                #'challenge': ch.challenge,
+                'challenge': data['challenge'],
                 'skip': True,
                 'redirect_to': redirect
             }
@@ -126,7 +128,8 @@ def get_challenge(challenge:str):
 
         else:
             response = {
-                'challenge': ch.challenge,
+                #'challenge': ch.challenge,
+                'challenge': data['challenge'],
                 'skip': False
             }
             return jsonify({'status': 200, 'response': response}), 200
