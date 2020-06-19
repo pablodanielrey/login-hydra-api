@@ -7,7 +7,7 @@ from dateutil.parser import parse
 import base64
 import io
 
-from flask import Blueprint, jsonify, request, send_file, make_response
+from flask import Blueprint, jsonify, request, send_file, make_response, Response
 
 from hydra.api.rest.models import hydraModel, hydraLocalModel, loginModel, usersModel
 from hydra.model import open_session
@@ -21,7 +21,6 @@ bp = Blueprint('login', __name__, url_prefix='/login/api/v1.0')
     Paso 1 - se obtiene un hash para el dispositivo que se encuentra accediendo al login.
     este hash se usa para todos los otras apis. (es solo informativo ya que puede ser hackeado facilmente)
 """
-
 @bp.route('/device', methods=['POST'])
 def get_device_id():
     '''
@@ -79,9 +78,11 @@ def get_challenge(challenge:str):
 
         status, data = hydraModel.get_login_challenge(challenge)
         if status == 409:
-            return jsonify({'status': 409, 'response': {'error':'Ya usado'}}), 409
+            return Response('Id ya usado', status=409)
+            #return jsonify({'status': 409, 'response': {'error':'Ya usado'}}), 409
         if status != 200:
-            return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
+            return Response('Id no encontrado', status=404)
+            #return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
 
         """
         ch = None
@@ -135,10 +136,7 @@ def get_challenge(challenge:str):
             return jsonify({'status': 200, 'response': response}), 200
 
     except Exception as e:
-        response = {
-            'error': str(e)
-        }        
-        return jsonify({'status': 500, 'response':response}), 500
+        return Response('Procesando el requerimiento', 500)
 
 
 """
@@ -304,7 +302,6 @@ def login():
         return jsonify({'status': 500, 'response':response}), 500
 
 
-
 """
     Paso 3 - Se acepta implícitamente el acceso a los datos del login por parte de la app cliente.
 """
@@ -314,7 +311,6 @@ def get_consent_challenge(challenge:str):
         Acepta el consentimiento del usuario para el acceso a los datos de la app cliente.
         respuestas:
             200 - ok
-
     """
     try:
         assert challenge is not None
