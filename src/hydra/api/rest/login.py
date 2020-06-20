@@ -69,6 +69,7 @@ def get_challenge(challenge:str):
     """
     try:
         assert challenge is not None
+        logging.info(f'challenge : {challenge}')
 
         #data = request.json
         #assert data['device_hash'] is not None
@@ -78,9 +79,11 @@ def get_challenge(challenge:str):
 
         status, data = hydraModel.get_login_challenge(challenge)
         if status == 409:
+            logging.warn(f'challenge ya usado : {data}')
             return Response('Id ya usado', status=409)
             #return jsonify({'status': 409, 'response': {'error':'Ya usado'}}), 409
         if status != 200:
+            logging.warn(f'error procesando hydra : {status} {data}')
             return Response('Id no encontrado', status=404)
             #return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
 
@@ -136,6 +139,7 @@ def get_challenge(challenge:str):
             return jsonify({'status': 200, 'response': response}), 200
 
     except Exception as e:
+        logging.exception(e)
         return Response('Procesando el requerimiento', 500)
 
 
