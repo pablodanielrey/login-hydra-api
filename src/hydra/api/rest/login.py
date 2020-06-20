@@ -213,20 +213,17 @@ def login():
         #device_id = data['device_id']
         #assert device_id is not None
     except Exception:
-        status = 400
-        return jsonify({'status':status, 'response':{'error':'malformed request'}}), status
-
-    position = data['position'] if 'position' in data else None
+        return Response('Formato de datos erróneo', 400)
 
     # obtengo el challenge de hydra.
     status, ch = hydraModel.get_login_challenge(challenge)
     if status == 409:
-        return jsonify({'status': 409, 'response': {'error':'Ya usado'}}), 409
+        return Response('Id ya usado', status=409)
     if status != 200:
-        return jsonify({'status': 404, 'response': {'error':'No encontrado'}}), 404
-
-    original_url = ch['request_url']
+        return Response('Id no encontrado', status=404)
+    
     try:
+        original_url = ch['request_url']
         usr = None
         with open_session() as session:
             """
@@ -236,70 +233,51 @@ def login():
                 return jsonify({'status':status, 'response':{'error':'challenge not found'}}), status
             original_url = ch.request_url
             """
-            usr, hash_ = loginModel.login(session, user, password, None, challenge, position=position)
+            usr, hash_ = loginModel.login(session, user, password, None, challenge, position=None)
             session.commit()
 
-        if usr:
-            """
-            d = hydraModel.get_device_logins(session, device_id)
-            d.success = d.success + 1
-            session.commit()
-            """
-            # aca se debe obtener el usuario para poder setearlo dentro del idtoken
-            uid = usr.user_id
-            with open_users_session() as users_session:
-                users = usersModel.get_users(users_session, [uid])
-                if not users or len(users) <= 0:
-                    raise Exception(f'no se pudo obtener usuario con uid : {uid}')
-
-                user = users[0]
-                context = _generate_context(user)
-
-            status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
-            if status == 409:
-                ''' el challenge ya fue usado, asi que se redirige a oauth nuevamente para regenerar otro '''
-                redirect = ch['request_url']
-            if status != 200:
-                ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
-                redirect = original_url
-            else:
-                redirect = data['redirect_to']
-
-            response = {
-                'hash': hash_,
-                'redirect_to': redirect
-            }
-            return jsonify({'status':status, 'response':response}), status
-
-        else:
+        if not usr:
             """
             d = hydraModel.get_device_logins(session, device_id)
             d.errors = d.errors + 1
             session.commit()
             """
-
             status, data = hydraModel.deny_login_challenge(challenge, None, 'Credenciales incorrectas')
             if status != 200:
-                ''' aca se trata de un error irrecuperable, asi que se reidrecciona el cliente hacia la url original de inicio de oauth '''
-                redirect = original_url
-            else:
-                redirect = data['redirect_to']
+                return Response('Usuario o Contraseña incorrecta', 503)
 
-            ''' seteo el codigo de error para 404 - debido a que las credenciales son incorrectas '''
-            status = 404
-            response = {
-                'hash': hash_,
-                'redirect_to': redirect
-            }
-            return jsonify({'status':status, 'response':response}), status
+            redirect = data['redirect_to']
+            return Response(redirect, 401)
+
+        """
+        d = hydraModel.get_device_logins(session, device_id)
+        d.success = d.success + 1
+        session.commit()
+        """
+        # aca se debe obtener el usuario para poder setearlo dentro del idtoken
+        uid = usr.user_id
+        with open_users_session() as users_session:
+            users = usersModel.get_users(users_session, [uid])
+            if not users or len(users) <= 0:
+                raise Exception(f'no se pudo obtener usuario con uid : {uid}')
+
+            user = users[0]
+            context = _generate_context(user)
+
+        status, data = hydraModel.accept_login_challenge(challenge=challenge, uid=uid, data=context, remember=False)
+        if status != 200:
+            return Response('Interno de validación', 503)
+
+        redirect = data['redirect_to']
+        response = {
+            'hash': hash_,
+            'redirect_to': redirect
+        }
+        return jsonify({'status':status, 'response':response}), status
 
     except Exception as e1:
-        response = {
-            'hash': None,
-            'redirect_to': original_url,
-            'error': str(e1)
-        }
-        return jsonify({'status': 500, 'response':response}), 500
+        logging.exception(e1)
+        return Response('Interno del servidor',500)
 
 
 """
