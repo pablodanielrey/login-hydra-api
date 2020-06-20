@@ -290,64 +290,50 @@ def get_consent_challenge(challenge:str):
         respuestas:
             200 - ok
     """
-    try:
-        assert challenge is not None
+    if not challenge:
+        return Response('Formato de datos erróneo', 400)
 
-        status, data = hydraModel.get_consent_challenge(challenge)
-        if status != 200:
-            response = {
-                'error': 'Error obteniendo el consent desde el servidor',
-                'redirect_to': ''
-            }
-            return jsonify({'status': 500, 'response':response}), 500
+    status, data = hydraModel.get_consent_challenge(challenge)
+    if status == 409:
+        return Response('Id ya usado', status=409)
+    if status != 200:
+        return Response('Id no encontrado', status=404)
+
+    try:
+        """
+        with open_session() as session:
+            hydraLocalModel.store_consent_challenge(session, data)
+            session.commit()
+        """
 
         original_url = data['request_url']
+        scopes = data['requested_scope']
+        context = data['context']
 
-        try:
-            """
-            with open_session() as session:
-                hydraLocalModel.store_consent_challenge(session, data)
-                session.commit()
-            """
+        # aca se debe obtener el usuario para chequear si se debe actualizar el contexto.
+        uid = context['sub']
+        with open_users_session() as users_session:
+            users = usersModel.get_users(users_session, [uid])
+            if not users or len(users) <= 0:
+                raise Exception(f'no se pudo obtener usuario con uid : {uid}')
 
-            scopes = data['requested_scope']
-            context = data['context']
+            user = users[0]
+            context = _generate_context(user)
 
+        status, redirect = hydraModel.accept_consent_challenge(challenge=challenge, scopes=scopes, context=context, remember=False)
+        if status != 200:
+            return Response('Interno de validación', 503)        
+        
+        response = {
+            'skip': data['skip'],
+            'scopes': data['requested_scope'],
+            'audience': data['requested_access_token_audience'],
+            'subject': data['subject'],
+            'redirect_to': redirect['redirect_to']
+        }
+        return jsonify({'status': 200, 'response': response}), 200
 
-            # aca se debe obtener el usuario para chequear si se debe actualizar el contexto.
-            uid = context['sub']
-            with open_users_session() as users_session:
-                users = usersModel.get_users(users_session, [uid])
-                if not users or len(users) <= 0:
-                    raise Exception(f'no se pudo obtener usuario con uid : {uid}')
-
-                user = users[0]
-                context = _generate_context(user)
-
-
-            status, redirect = hydraModel.accept_consent_challenge(challenge=challenge, scopes=scopes, context=context, remember=False)
-            if status != 200:
-                response = {
-                    'redirect_to': original_url
-                }
-                return jsonify({'status': status, 'response':response}), status
-            else:
-                response = {
-                    'skip': data['skip'],
-                    'scopes': data['requested_scope'],
-                    'audience': data['requested_access_token_audience'],
-                    'subject': data['subject'],
-                    'redirect_to': redirect['redirect_to']
-                }
-                return jsonify({'status': 200, 'response': response}), 200
-
-        except Exception as e1:
-            response = {
-                'error': str(e1),
-                'redirect_to': original_url
-            }
-            return jsonify({'status': 500, 'response':response}), 500
-
-    except Exception as e:
-        return jsonify({'status': 500, 'response':{'error':str(e)}}), 500
+    except Exception as e1:
+        logging.exception(e1)
+        return Response('Interno del servidor',500)
 
